@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import bcrypt, { hash, setRandomFallback } from "bcryptjs";
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import jwt, { verify } from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -22,7 +22,7 @@ function generateToken(id: number) {
 app.get("/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      include: { messages: true, rooms: true },
+      include: { messages: true },
     });
     res.send(users);
   } catch (error) {
@@ -36,7 +36,7 @@ app.get("/user/:id", async (req, res) => {
     const id = Number(req.params.id);
     const user = await prisma.user.findUnique({
       where: { id },
-      include: { messages: true },
+      include: { messages: true, rooms: true },
     });
     if (user) {
       res.send(user);
