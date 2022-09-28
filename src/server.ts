@@ -22,7 +22,7 @@ function generateToken(id: number) {
 app.get("/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      include: { chats: true, messages: true },
+      include: { chats: true },
     });
     res.send(users);
   } catch (error) {
@@ -31,14 +31,12 @@ app.get("/users", async (req, res) => {
   }
 });
 
-
-
 app.get("/user/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
     const user = await prisma.user.findUnique({
       where: { id },
-      include: { chats: true, messages: true },
+      include: { chats: true },
     });
     if (user) {
       res.send(user);
@@ -51,89 +49,88 @@ app.get("/user/:id", async (req, res) => {
   }
 });
 
+app.post("/sign-up", async (req, res) => {
+  const { email, password } = req.body;
 
+  try {
+    //@ts-ignore
+    const existingUser = await prisma.user.findUnique({ where: { email } });
 
+    const errors: string[] = [];
 
-  
-  app.post('/sign-up', async (req, res) => {
-    const { email, password } = req.body
-  
-    try {
-        //@ts-ignore
-      const existingUser = await prisma.user.findUnique({ where: { email } })
-  
-      const errors: string[] = []
-  
-      if (typeof email !== 'string') {
-        errors.push('Email missing or not a string')
-      }
-  
-      if (typeof password !== 'string') {
-        errors.push('Password missing or not a string')
-      }
-  
-      if (errors.length > 0) {
-        res.status(400).send({ errors })
-        return
-      }
-  
-      if (existingUser) {
-        res.status(400).send({ errors: ['Email already exists.'] })
-        return
-      }
-  
-      const user = await prisma.user.create({
-          //@ts-ignore
-        data: { email, password: bcrypt.hashSync(password), avatar: req.body.avatar, username: req.body.username }
-      })
-      const token = generateToken(user.id)
-      res.send({ user, token })
-    } catch (error) {
-      // @ts-ignore
-      res.status(400).send({ errors: [error.message] })
+    if (typeof email !== "string") {
+      errors.push("Email missing or not a string");
     }
-  })
 
-  
-  app.post('/sign-in', async (req, res) => {
-    try {
-      const email = req.body.email
-      const password = req.body.password
-  
-      const errors: string[] = []
-  
-      if (typeof email !== 'string') {
-        errors.push('Email missing or not a string')
-      }
-  
-      if (typeof password !== 'string') {
-        errors.push('Password missing or not a string')
-      }
-  
-      if (errors.length > 0) {
-        res.status(400).send({ errors })
-        return
-      }
-  
-      const user = await prisma.user.findUnique({
-          //@ts-ignore
-        where: { email },
-        include: {
-          chats: { include: { User: true } },
-          messages: { include: { User: true } }
-        }
-      })
-      if (user && verify(password, user.password)) {
-        const token = generateToken(user.id)
-        res.send({ user, token })
-      } else {
-        res.status(400).send({ errors: ['Username/password invalid.'] })
-      }
-    } catch (error) {
-      // @ts-ignore
-      res.status(400).send({ errors: [error.message] })
+    if (typeof password !== "string") {
+      errors.push("Password missing or not a string");
     }
-  })
+
+    if (errors.length > 0) {
+      res.status(400).send({ errors });
+      return;
+    }
+
+    if (existingUser) {
+      res.status(400).send({ errors: ["Email already exists."] });
+      return;
+    }
+
+    const user = await prisma.user.create({
+      //@ts-ignore
+      data: {
+        email,
+        password: bcrypt.hashSync(password),
+        avatar: req.body.avatar,
+        username: req.body.username,
+      },
+    });
+    const token = generateToken(user.id);
+    res.send({ user, token });
+  } catch (error) {
+    // @ts-ignore
+    res.status(400).send({ errors: [error.message] });
+  }
+});
+
+app.post("/sign-in", async (req, res) => {
+  try {
+    const email = req.body.email;
+    const password = req.body.password;
+
+    const errors: string[] = [];
+
+    if (typeof email !== "string") {
+      errors.push("Email missing or not a string");
+    }
+
+    if (typeof password !== "string") {
+      errors.push("Password missing or not a string");
+    }
+
+    if (errors.length > 0) {
+      res.status(400).send({ errors });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      //@ts-ignore
+      where: { email },
+      include: {
+        chats: { include: { user: true } },
+      },
+    });
+    if (user && verify(password, user.password)) {
+      const token = generateToken(user.id);
+      res.send({ user, token });
+    } else {
+      res.status(400).send({ errors: ["Username/password invalid."] });
+    }
+  } catch (error) {
+    // @ts-ignore
+    res.status(400).send({ errors: [error.message] });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Click: http://localhost:${port}`);
