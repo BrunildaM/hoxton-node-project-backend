@@ -22,7 +22,7 @@ function generateToken(id: number) {
 app.get("/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      include: { messages:true, rooms: true},
+      include: { messages: true, rooms: true },
     });
     res.send(users);
   } catch (error) {
@@ -65,7 +65,6 @@ app.post("/sign-up", async (req, res) => {
     if (typeof password !== "string") {
       errors.push("Password missing or not a string");
     }
-    
 
     if (errors.length > 0) {
       res.status(400).send({ errors });
@@ -83,6 +82,8 @@ app.post("/sign-up", async (req, res) => {
         email,
         password: bcrypt.hashSync(password),
         avatar: req.body.avatar,
+        lastName: req.body.lastName,
+        firstName: req.body.firstName,
       },
     });
     const token = generateToken(user.id);
@@ -115,7 +116,7 @@ app.post("/sign-in", async (req, res) => {
 
     const user = await prisma.user.findUnique({
       //@ts-ignore
-      where: { email }
+      where: { email },
     });
     if (user && verify(password, user.password)) {
       const token = generateToken(user.id);
