@@ -16,7 +16,7 @@ const port = 4000;
 const SECRET = process.env.SECRET!;
 
 function generateToken(id: number) {
-  return jwt.sign({ id: id }, SECRET, { expiresIn: "1 month" });
+  return jwt.sign({ id: id }, SECRET, { expiresIn: "30d" });
 }
 
 app.get("/users", async (req, res) => {
@@ -53,7 +53,6 @@ app.post("/sign-up", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    //@ts-ignore
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
     const errors: string[] = [];
@@ -77,7 +76,7 @@ app.post("/sign-up", async (req, res) => {
     }
 
     const user = await prisma.user.create({
-      //@ts-ignore
+
       data: {
         email,
         password: bcrypt.hashSync(password),
@@ -93,6 +92,8 @@ app.post("/sign-up", async (req, res) => {
     res.status(400).send({ errors: [error.message] });
   }
 });
+
+
 
 app.post("/sign-in", async (req, res) => {
   try {
@@ -115,7 +116,7 @@ app.post("/sign-in", async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      //@ts-ignore
+    
       where: { email },
     });
     if (user && verify(password, user.password)) {
