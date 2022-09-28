@@ -19,6 +19,8 @@ function generateToken(id: number) {
   return jwt.sign({ id: id }, SECRET, { expiresIn: "30d" });
 }
 
+
+
 app.get("/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -48,6 +50,38 @@ app.get("/user/:id", async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
+
+
+
+async function getCurrentUser (token: string) {
+  const decodedData = jwt.verify(token, SECRET)
+  const user = await prisma.user.findUnique({
+    // @ts-ignore
+    where: { id: decodedData.id },
+    include: { messages: true,  rooms: true, participants: true }
+  })
+  return user
+}
+
+// res.send({ user: user, token: generateToken(user.id) })
+
+
+
+
+app.get('/validate', async (req, res) => {
+  try {
+    if (req.headers.authorization) {
+      const user = await getCurrentUser(req.headers.authorization)
+      // @ts-ignore
+      res.send({ user, token: getToken(user.id) })
+    }
+  } catch (error) {
+    // @ts-ignore
+    res.status(400).send({ error: error.message })
+  }
+})
+
+
 
 app.post("/sign-up", async (req, res) => {
   const { email, password } = req.body;
