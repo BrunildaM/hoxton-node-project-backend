@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import jwt, { verify } from "jsonwebtoken";
 import dotenv from "dotenv";
+import { Server } from "socket.io";
 dotenv.config();
 
 const app = express();
@@ -274,4 +275,27 @@ app.get("/validate", async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Click: http://localhost:${port}`);
+});
+
+const io = new Server(4555, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
+const messages: Message[] = [];
+
+type Message={
+ content:string,
+ user:User & {friends: User[]}
+}
+//initializing the socket io connection
+io.on("connection", (socket) => {
+  //for a new user joining the chat
+  socket.emit("message",messages)
+  socket.on("message", (message: Message) => {
+    messages.push(message);
+    socket.broadcast.emit("message", messages);
+  });
 });
