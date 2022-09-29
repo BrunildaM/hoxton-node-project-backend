@@ -9,12 +9,14 @@ dotenv.config();
 
 const app = express();
 app.use(cors());
-// app.options("*", cors);
+// app.options('*', cors());
 app.use(express.json());
 const prisma = new PrismaClient();
 
 const port = 5000;
 const SECRET = process.env.SECRET!;
+
+
 
 function generateToken(id: number) {
   return jwt.sign({ id: id }, SECRET, { expiresIn: "30 days" });
@@ -272,6 +274,8 @@ app.delete("/rooms/:id", async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
+
+
 
 app.get("/validate", async (req, res) => {
   try {
