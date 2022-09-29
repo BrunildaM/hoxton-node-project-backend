@@ -180,7 +180,10 @@ app.post("/messages", async (req, res) => {
         room: {
           connectOrCreate: {
             where: { id: roomId },
-            create: { participants: { connect: { id: participantId } }, User: {connect: {email: req.body.email}} },
+            create: {
+              participants: { connect: { id: participantId } },
+              User: { connect: { email: req.body.email } },
+            },
           },
         },
         sender: { connect: { email: req.body.email } },
@@ -209,6 +212,24 @@ app.delete("/messages/:id", async (req, res) => {
   }
 });
 
+//get a specific conversation
+app.get("/rooms/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const room = await prisma.room.findUnique({ where: { id } });
+    if (room) {
+      res.send(room);
+    } else {
+      res.send({ error: "Room not found" });
+    }
+  } catch (error) {
+    // @ts-ignore
+    res.status(400).send({ errors: [error.message] });
+  }
+});
+
+
+
 //creating a conversation
 app.post("/rooms", async (req, res) => {
   try {
@@ -236,8 +257,6 @@ app.post("/rooms", async (req, res) => {
     res.status(400).send({ errors: [error.message] });
   }
 });
-
-
 
 //Delete a full conversation
 app.delete("/rooms/:id", async (req, res) => {
