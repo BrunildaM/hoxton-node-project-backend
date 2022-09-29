@@ -12,11 +12,11 @@ app.use(cors());
 app.use(express.json());
 const prisma = new PrismaClient();
 
-const port = 4000;
+const port = 5000;
 const SECRET = process.env.SECRET!;
 
 function generateToken(id: number) {
-  return jwt.sign({ id: id }, SECRET, { expiresIn: "30d" });
+  return jwt.sign({ id: id }, SECRET, { expiresIn: "30 days" });
 }
 
 //Getting all the users and their messages includng the rooms
@@ -62,19 +62,6 @@ async function getCurrentUser(token: string) {
 }
 
 // res.send({ user: user, token: generateToken(user.id) })
-
-app.get("/validate", async (req, res) => {
-  try {
-    if (req.headers.authorization) {
-      const user = await getCurrentUser(req.headers.authorization);
-      // @ts-ignore
-      res.send({ user, token: getToken(user.id) });
-    }
-  } catch (error) {
-    // @ts-ignore
-    res.status(400).send({ error: error.message });
-  }
-});
 
 //creating a new user account
 app.post("/sign-up", async (req, res) => {
@@ -137,18 +124,18 @@ app.post("/sign-in", async (req, res) => {
     }
 
     if (errors.length > 0) {
-      res.status(400).send({ errors });
+      res.status(404).send({ errors });
       return;
     }
 
     const user = await prisma.user.findUnique({
       where: { email },
     });
-    if (user && verify(password, user.password)) {
-      const token = generateToken(user.id);
-      res.send({ user, token });
+    if (user && bcrypt.compareSync(password, user.password)) {
+      // const token = generateToken(user.id);
+      res.send({ user, token: generateToken(user.id) });
     } else {
-      res.status(400).send({ errors: ["Username/password invalid."] });
+      res.status(404).send({ errors: ["Username/password invalid."] });
     }
   } catch (error) {
     // @ts-ignore
@@ -228,8 +215,6 @@ app.get("/rooms/:id", async (req, res) => {
   }
 });
 
-
-
 //creating a conversation
 app.post("/rooms", async (req, res) => {
   try {
@@ -270,6 +255,19 @@ app.delete("/rooms/:id", async (req, res) => {
     }
   } catch (error) {
     //@ts-ignore
+    res.status(400).send({ error: error.message });
+  }
+});
+
+app.get("/validate", async (req, res) => {
+  try {
+    if (req.headers.authorization) {
+      const user = await getCurrentUser(req.headers.authorization);
+      // @ts-ignore
+      res.send({ user, token: generateToken(user.id) });
+    }
+  } catch (error) {
+    // @ts-ignore
     res.status(400).send({ error: error.message });
   }
 });
