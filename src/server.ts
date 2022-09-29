@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
 import { PrismaClient, User } from "@prisma/client";
-import jwt, { verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { Server } from "socket.io";
 dotenv.config();
@@ -183,7 +183,20 @@ app.post("/messages", async (req, res) => {
     res.status(400).send({ errors: [error.message] });
   }
 });
-
+// data: {
+//   content: req.body.content,
+//   room: {
+//     connectOrCreate: {
+//       where: { id: roomId },
+//       create: {
+//         participants: { connect: { id: participantId } },
+//         User: { connect: { email: req.body.email } },
+//       },
+//     },
+//   },
+//   sender: { connect: { email: req.body.email } },
+// },
+// });
 //Deleting a message
 app.delete("/messages/:id", async (req, res) => {
   try {
@@ -286,14 +299,14 @@ const io = new Server(4555, {
 
 const messages: Message[] = [];
 
-type Message={
- content:string,
- user:User & {friends: User[]}
-}
+type Message = {
+  content: string;
+  user: User & { friends: User[] };
+};
 //initializing the socket io connection
 io.on("connection", (socket) => {
   //for a new user joining the chat
-  socket.emit("message",messages)
+  socket.emit("message", messages);
   socket.on("message", (message: Message) => {
     messages.push(message);
     socket.broadcast.emit("message", messages);
