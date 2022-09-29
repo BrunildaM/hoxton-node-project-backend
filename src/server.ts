@@ -68,7 +68,7 @@ app.get("/validate", async (req, res) => {
     if (req.headers.authorization) {
       const user = await getCurrentUser(req.headers.authorization);
       // @ts-ignore
-      res.send({ user, token: getToken(user.id) });
+      res.send({ user, token: generateToken(user.id) });
     }
   } catch (error) {
     // @ts-ignore
