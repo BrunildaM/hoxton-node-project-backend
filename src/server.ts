@@ -32,12 +32,12 @@ app.get("/users", async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
-app.delete("user:id", async (req, res) => {
+app.delete("/user/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
     const deletedUser = await prisma.user.delete({
       where: { id },
-      include: { messages: true, participants: true, rooms: true },
+      include: { messages: true, participants: true, rooms: true }
     });
     if (deletedUser) {
       res.send({ message: "user deleted" });
