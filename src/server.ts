@@ -37,7 +37,7 @@ app.delete("/user/:id", async (req, res) => {
     const id = Number(req.params.id);
     const deletedUser = await prisma.user.delete({
       where: { id },
-      include: { messages: true, participants: true, rooms: true }
+      include: { messages: true, participants: true, rooms: true },
     });
     if (deletedUser) {
       res.send({ message: "user deleted" });
@@ -67,6 +67,7 @@ app.get("/user/:id", async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
+
 
 async function getCurrentUser(token: string) {
   const decodedData = jwt.verify(token, SECRET);
