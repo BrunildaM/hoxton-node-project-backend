@@ -16,8 +16,6 @@ const prisma = new PrismaClient();
 const port = 5000;
 const SECRET = process.env.SECRET!;
 
-
-
 function generateToken(id: number) {
   return jwt.sign({ id: id }, SECRET, { expiresIn: "30 days" });
 }
@@ -34,7 +32,23 @@ app.get("/users", async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
-
+app.delete("/user/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const deletedUser = await prisma.user.delete({
+      where: { id },
+      include: { messages: true, participants: true, rooms: true },
+    });
+    if (deletedUser) {
+      res.send({ message: "user deleted" });
+    } else {
+      res.status(404).send({ error: "User not found" });
+    }
+  } catch (error) {
+    //@ts-ignore
+    res.status(400).send({ error: error.message });
+  }
+});
 //getting a single user
 app.get("/user/:id", async (req, res) => {
   try {
@@ -53,6 +67,7 @@ app.get("/user/:id", async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
+
 
 async function getCurrentUser(token: string) {
   const decodedData = jwt.verify(token, SECRET);
@@ -274,8 +289,6 @@ app.delete("/rooms/:id", async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
-
-
 
 app.get("/validate", async (req, res) => {
   try {
