@@ -68,13 +68,16 @@ app.get("/user/:id", async (req, res) => {
   }
 });
 
-
 async function getCurrentUser(token: string) {
   const decodedData = jwt.verify(token, SECRET);
   const user = await prisma.user.findUnique({
     // @ts-ignore
     where: { id: decodedData.id },
-    include: { messages: true, rooms: true, participants: true },
+    include: {
+      messages: true,
+      rooms: { include: { User: true, messages: true, participants: true } },
+      participants: true,
+    },
   });
   return user;
 }
@@ -178,20 +181,12 @@ app.get("/messages", async (req, res) => {
 app.post("/messages", async (req, res) => {
   try {
     const roomId = Number(req.body.roomId);
-    const participantId = Number(req.body.participantId);
+    const userId = Number(req.body.userId);
     const newMessage = await prisma.message.create({
       data: {
         content: req.body.content,
-        room: {
-          connectOrCreate: {
-            where: { id: roomId },
-            create: {
-              participants: { connect: { id: participantId } },
-              User: { connect: { email: req.body.email } },
-            },
-          },
-        },
-        sender: { connect: { email: req.body.email } },
+        roomId: roomId,
+        userId: userId,
       },
     });
     res.send(newMessage);
@@ -230,11 +225,25 @@ app.delete("/messages/:id", async (req, res) => {
   }
 });
 
+app.get("/rooms", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req.headers.authorization!);
+    if (user) {
+      res.send(user.rooms);
+    } else {
+      res.status(400).send({ error: "You have no authorization!" });
+    }
+  } catch (error) {
+    //@ts-ignore
+    res.status(400).send({ error: error.message });
+  }
+});
+
 //get a specific conversation
 app.get("/rooms/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const room = await prisma.room.findUnique({ where: { id } });
+    const room = await prisma.room.findUnique({ where: { id } , include: {messages: true}});
     if (room) {
       res.send(room);
     } else {
